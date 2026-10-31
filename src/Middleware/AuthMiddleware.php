@@ -26,6 +26,13 @@ class AuthMiddleware
             return;
         }
 
+        if (headers_sent()) {
+            if (session_status() !== PHP_SESSION_ACTIVE && php_sapi_name() !== 'cli') {
+                @session_start();
+            }
+            return;
+        }
+
         $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
             || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443)
             || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
@@ -45,7 +52,7 @@ class AuthMiddleware
         ini_set('session.use_only_cookies', '1');
         ini_set('session.gc_maxlifetime', (string)self::SESSION_LIFETIME);
 
-        session_start();
+        @session_start();
 
         // Expire inactive sessions
         if (isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY'] > self::SESSION_LIFETIME)) {
@@ -120,7 +127,9 @@ class AuthMiddleware
             }
 
             // Regenerate session ID to prevent session fixation attacks
-            session_regenerate_id(true);
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                @session_regenerate_id(true);
+            }
 
             // Establish authenticated session data
             $_SESSION['user'] = [
