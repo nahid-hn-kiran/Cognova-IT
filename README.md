@@ -19,6 +19,8 @@ http://localhost:8080
 - **Sales Invoices History:** `http://localhost:8080/sales/invoices.php`
 - **Product Management:** `http://localhost:8080/inventory/index.php`
 - **Inbound Stock Orders:** `http://localhost:8080/inventory/stock-in.php`
+- **Global Audit Ledger:** `http://localhost:8080/admin/audit-ledger.php`
+- **Staff User Management:** `http://localhost:8080/admin/users.php`
 - **Role Guard Test:** `http://localhost:8080/protected.php?role=Admin`
 - **Logout:** `http://localhost:8080/logout.php`
 
@@ -28,7 +30,7 @@ All test users are seeded with the password: `Password123!`
 
 | Role | Email | Password | Scope & Permissions |
 |------|-------|----------|---------------------|
-| **Admin** | `admin@congova.local` | `Password123!` | Full system administration, sales checkout, product catalog, inbound stock, ledger oversight |
+| **Admin** | `admin@congova.local` | `Password123!` | Full system administration, sales checkout, product catalog, inbound stock, audit ledger oversight, staff management, transactional reversals |
 | **Sales Operator** | `operator@congova.local` | `Password123!` | Sales order entry, dynamic POS checkout, invoice generation, customer receipts |
 | **Store Manager** | `manager@congova.local` | `Password123!` | Inbound stock receiving, catalog creation/updates, low-stock threshold monitoring |
 
@@ -59,8 +61,9 @@ All test users are seeded with the password: `Password123!`
   - Credential verification via `password_verify()` against bcrypt hashes.
   - Route guards:
     ```php
-    requireRole(['Admin', 'Sales Operator']); // Protect sales checkout
-    requireRole(['Admin', 'Store Manager']);  // Protect inventory
+    requireRole(['Admin']);                  // Global admin console & reversals
+    requireRole(['Admin', 'Sales Operator']); // Sales POS terminal
+    requireRole(['Admin', 'Store Manager']);  // Inventory management
     ```
 - **Authentication UI (`public/login.php` & `public/logout.php`)**:
   - Secure login portal with CSRF verification, session fixation prevention, and quick-fill test account chips.
@@ -91,10 +94,28 @@ All test users are seeded with the password: `Password123!`
     - **Audit Ledger Writes:**
       - Inventory reduction entry: `quantity_delta = -qty`, `stock_balance_after = newStock`, `category = INVENTORY`.
       - Financial revenue entry: `total_amount = netTotal`, `category = FINANCIAL`.
-  - `getInvoice($id)`: Retrieves full invoice details with line items and customer data.
-  - `getAllInvoices($filters)`: Queries sales history with customer search and volume totals.
 - **Sales UI & API (`public/sales/`)**:
   - `public/sales/index.php`: Dynamic POS terminal with cart row addition, live subtotals, tax/discount adjustments, and client-side insufficient stock guardrails.
   - `public/sales/api.php`: Asynchronous JSON checkout endpoint protected by CSRF verification and `requireRole(['Admin', 'Sales Operator'])`.
   - `public/sales/invoice.php`: Printer-ready enterprise receipt view with customer billing details and settlement confirmation.
   - `public/sales/invoices.php`: Searchable invoice transaction register with revenue statistics.
+
+### Module 5: Audit Ledger & Administrative Controls (Admin)
+- **Ledger Review & Reversal Service (`src/Services/LedgerService.php`)**:
+  - `getAuditLogs($filters, $page, $perPage)`: Paginated, filterable double-entry audit log (by action type, category, user, SKU, date range).
+  - `getMetrics()`: Aggregate metrics for events, recognized revenue, and refunded volume.
+  - `reverseInvoice($invoiceId, $reason, $adminUserId)`:
+    - Atomically locks invoice and line items in sorted order (`SELECT ... FOR UPDATE`).
+    - Marks invoice status as `refunded`.
+    - Restores inventory stock counts for every product item.
+    - Logs compensating `REFUND` entries into `audit_ledger` for both inventory and financial ledger tracks.
+  - `reverseInbound($inboundId, $reason, $adminUserId)`:
+    - Deducts inbound quantity from stock, prevents negative stock, and logs an `ADJUSTMENT` audit entry.
+- **User & Role Management Service (`src/Services/UserService.php`)**:
+  - Staff user provisioning, bcrypt password hashing, and role assignments (`Admin`, `Store Manager`, `Sales Operator`).
+  - Status management (`active`, `suspended`, `inactive`).
+  - Self-deactivation and demotion lockout protection for active administrators.
+- **Admin UI & API (`public/admin/`)**:
+  - `public/admin/audit-ledger.php`: Filterable audit ledger console with transactional reversal modals.
+  - `public/admin/users.php`: Staff accounts and RBAC permission manager with one-click suspension/activation toggles.
+  - `public/admin/api.php`: Protected administrative endpoint for reversals and user CRUD operations.

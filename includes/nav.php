@@ -63,6 +63,15 @@ $currentPath = $_SERVER['SCRIPT_NAME'] ?? '';
                     Invoices
                 </a>
             <?php endif; ?>
+
+            <?php if (hasRole(['Admin'])): ?>
+                <a href="/admin/audit-ledger.php" class="nav-item <?= str_contains($currentPath, '/admin/audit-ledger.php') ? 'active' : '' ?>">
+                    Audit Ledger
+                </a>
+                <a href="/admin/users.php" class="nav-item <?= str_contains($currentPath, '/admin/users.php') ? 'active' : '' ?>">
+                    Staff Users
+                </a>
+            <?php endif; ?>
         </nav>
 
         <div class="nav-user-area">

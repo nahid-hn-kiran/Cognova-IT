@@ -266,6 +266,29 @@ $requiredExtensions = [
             </div>
         </div>
 
+        <!-- Module 5: Audit Ledger & Admin Controls Card -->
+        <div class="card" style="border-color: rgba(245, 158, 11, 0.4);">
+            <h2>
+                Audit Ledger & Admin (Module 5)
+                <span class="badge badge-warning">Admin Console</span>
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem;">
+                Global double-entry audit trail inspection, transactional reversals (refunds/voids), and staff account RBAC provisioning.
+            </p>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <?php if (hasRole(['Admin'])): ?>
+                    <a href="/admin/audit-ledger.php" class="btn btn-outline" style="font-size: 0.825rem; border-color: rgba(245, 158, 11, 0.5); color: #fbbf24;">
+                        Audit Ledger
+                    </a>
+                    <a href="/admin/users.php" class="btn btn-outline" style="font-size: 0.825rem;">
+                        Staff Management
+                    </a>
+                <?php else: ?>
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">Admin clearance required</span>
+                <?php endif; ?>
+            </div>
+        </div>
+
         <!-- Role Guard Security Card -->
         <div class="card" style="border-color: rgba(99, 102, 241, 0.4);">
             <h2>
