@@ -15,6 +15,8 @@ Open your browser and navigate to:
 http://localhost:8080
 ```
 - **Login Portal:** `http://localhost:8080/login.php`
+- **Sales POS Terminal:** `http://localhost:8080/sales/index.php`
+- **Sales Invoices History:** `http://localhost:8080/sales/invoices.php`
 - **Product Management:** `http://localhost:8080/inventory/index.php`
 - **Inbound Stock Orders:** `http://localhost:8080/inventory/stock-in.php`
 - **Role Guard Test:** `http://localhost:8080/protected.php?role=Admin`
@@ -26,9 +28,9 @@ All test users are seeded with the password: `Password123!`
 
 | Role | Email | Password | Scope & Permissions |
 |------|-------|----------|---------------------|
-| **Admin** | `admin@congova.local` | `Password123!` | Full system administration, product catalog, inbound stock, ledger oversight |
+| **Admin** | `admin@congova.local` | `Password123!` | Full system administration, sales checkout, product catalog, inbound stock, ledger oversight |
+| **Sales Operator** | `operator@congova.local` | `Password123!` | Sales order entry, dynamic POS checkout, invoice generation, customer receipts |
 | **Store Manager** | `manager@congova.local` | `Password123!` | Inbound stock receiving, catalog creation/updates, low-stock threshold monitoring |
-| **Sales Operator** | `operator@congova.local` | `Password123!` | Sales order entry, invoice creation, customer checkout |
 
 ---
 
@@ -57,7 +59,8 @@ All test users are seeded with the password: `Password123!`
   - Credential verification via `password_verify()` against bcrypt hashes.
   - Route guards:
     ```php
-    requireRole(['Admin', 'Store Manager']); // Protect inventory modules
+    requireRole(['Admin', 'Sales Operator']); // Protect sales checkout
+    requireRole(['Admin', 'Store Manager']);  // Protect inventory
     ```
 - **Authentication UI (`public/login.php` & `public/logout.php`)**:
   - Secure login portal with CSRF verification, session fixation prevention, and quick-fill test account chips.
@@ -73,10 +76,25 @@ All test users are seeded with the password: `Password123!`
     - Increments product's `stock_quantity`.
     - Inserts receipt into `stock_inbound`.
     - Inserts immutable transaction entry into `audit_ledger` with `quantity_delta`, `unit_cost`, `total_amount`, and `stock_balance_after`.
-  - `getInboundHistory($limit)`: Returns recent purchase order receipts with product and user details.
-  - `getLedgerHistory($limit)`: Returns audit ledger entries.
 - **Inventory UI (`public/inventory/index.php` & `public/inventory/stock-in.php`)**:
   - Protected by `requireRole(['Admin', 'Store Manager'])`.
   - Real-time low-stock banner with active counter and visual table highlights.
-  - Add/Edit product modal with JavaScript `fetch()` API integration (`public/inventory/api.php`).
   - Real-time stock impact calculator on the Stock Inbound portal.
+
+### Module 4: Sales Invoicing & Atomic Concurrency Engine
+- **Invoice Service (`src/Services/InvoiceService.php`)**:
+  - `createInvoice($headerData, $items, $userId)`:
+    - **ACID Transaction:** Executes inside `$pdo->beginTransaction()` ... `$pdo->commit()`.
+    - **Deadlock-Free Row-Level Locking:** Product IDs are numerically sorted before executing `SELECT ... FOR UPDATE` across affected rows.
+    - **Zero-Stock & Insufficient Stock Enforcement:** Strictly rejects transactions if available `stock_quantity <= 0` or if `requested_quantity > stock_quantity`.
+    - **Atomic Stock Deduction:** Decrements `products.stock_quantity`.
+    - **Audit Ledger Writes:**
+      - Inventory reduction entry: `quantity_delta = -qty`, `stock_balance_after = newStock`, `category = INVENTORY`.
+      - Financial revenue entry: `total_amount = netTotal`, `category = FINANCIAL`.
+  - `getInvoice($id)`: Retrieves full invoice details with line items and customer data.
+  - `getAllInvoices($filters)`: Queries sales history with customer search and volume totals.
+- **Sales UI & API (`public/sales/`)**:
+  - `public/sales/index.php`: Dynamic POS terminal with cart row addition, live subtotals, tax/discount adjustments, and client-side insufficient stock guardrails.
+  - `public/sales/api.php`: Asynchronous JSON checkout endpoint protected by CSRF verification and `requireRole(['Admin', 'Sales Operator'])`.
+  - `public/sales/invoice.php`: Printer-ready enterprise receipt view with customer billing details and settlement confirmation.
+  - `public/sales/invoices.php`: Searchable invoice transaction register with revenue statistics.

@@ -51,6 +51,18 @@ $currentPath = $_SERVER['SCRIPT_NAME'] ?? '';
                     Stock Inbound
                 </a>
             <?php endif; ?>
+
+            <?php if (hasRole(['Admin', 'Sales Operator'])): ?>
+                <a href="/sales/index.php" class="nav-item <?= str_contains($currentPath, '/sales/index.php') ? 'active' : '' ?>">
+                    Sales POS
+                </a>
+            <?php endif; ?>
+
+            <?php if (hasRole(['Admin', 'Sales Operator', 'Store Manager'])): ?>
+                <a href="/sales/invoices.php" class="nav-item <?= (str_contains($currentPath, '/sales/invoices.php') || str_contains($currentPath, '/sales/invoice.php')) ? 'active' : '' ?>">
+                    Invoices
+                </a>
+            <?php endif; ?>
         </nav>
 
         <div class="nav-user-area">

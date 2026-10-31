@@ -8,6 +8,7 @@ require_once __DIR__ . '/../includes/auth.php';
 
 use App\Config\Database;
 use App\Services\ProductService;
+use App\Services\InvoiceService;
 
 header('Content-Type: text/html; charset=utf-8');
 
@@ -20,6 +21,7 @@ $tableStats = [];
 $sampleProducts = [];
 $lowStockCount = 0;
 $totalInventoryValuation = 0.0;
+$salesSummary = ['total_revenue' => 0.0, 'invoice_count' => 0];
 
 try {
     $pdo = Database::getConnection();
@@ -34,6 +36,9 @@ try {
 
     $productService = new ProductService();
     $lowStockCount = $productService->getLowStockCount();
+
+    $invoiceService = new InvoiceService();
+    $salesSummary = $invoiceService->getSalesSummary();
 
     // Inventory Valuation
     $stmtValuation = $pdo->query("SELECT SUM(stock_quantity * unit_cost) AS total_val FROM products WHERE status = 'active'");
@@ -199,6 +204,11 @@ $requiredExtensions = [
         </div>
 
         <div class="stat-card">
+            <div class="stat-label">Invoiced Revenue (Module 4)</div>
+            <div class="stat-value" style="color: #60a5fa;">$<?= number_format($salesSummary['total_revenue'], 2) ?></div>
+        </div>
+
+        <div class="stat-card">
             <div class="stat-label">Low Stock Alerts</div>
             <div class="stat-value" style="color: <?= $lowStockCount > 0 ? '#f87171' : '#34d399' ?>;">
                 <?= $lowStockCount ?>
@@ -213,6 +223,27 @@ $requiredExtensions = [
 
     <!-- Navigation & Quick Access Modules -->
     <div class="grid">
+        <!-- Module 4: Sales POS & Invoicing Card -->
+        <div class="card" style="border-color: rgba(16, 185, 129, 0.4);">
+            <h2>
+                Sales Invoicing & POS (Module 4)
+                <span class="badge badge-success">ACID Concurrency</span>
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem;">
+                Sales Operator checkout terminal with row-level locks (SELECT FOR UPDATE) preventing zero-stock and negative inventory conditions.
+            </p>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <?php if (hasRole(['Admin', 'Sales Operator'])): ?>
+                    <a href="/sales/index.php" class="btn btn-success" style="font-size: 0.825rem;">
+                        <span>+</span> Open POS Terminal
+                    </a>
+                <?php endif; ?>
+                <a href="/sales/invoices.php" class="btn btn-outline" style="font-size: 0.825rem;">
+                    Invoices (<?= $salesSummary['invoice_count'] ?>)
+                </a>
+            </div>
+        </div>
+
         <!-- Module 3: Inventory Management Card -->
         <div class="card" style="border-color: rgba(59, 130, 246, 0.4);">
             <h2>
