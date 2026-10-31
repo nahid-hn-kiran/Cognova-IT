@@ -34,7 +34,7 @@ $lowStockCount = $productService->getLowStockCount();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Catalog & Inventory - Congova IT</title>
+    <title>Product Catalog & Inventory - Cognova IT</title>
     <style>
         :root {
             --bg: #0b1120;

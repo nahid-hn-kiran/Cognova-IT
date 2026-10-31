@@ -25,7 +25,7 @@ $products = $productService->getAll(['status' => 'active']);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sales Checkout (POS) - Congova IT</title>
+    <title>Sales Checkout (POS) - Cognova IT</title>
     <style>
         :root {
             --bg: #0b1120;
@@ -387,7 +387,7 @@ $products = $productService->getAll(['status' => 'active']);
                 <div class="summary-card">
                     <div class="card-title" style="margin-bottom: 1rem;">
                         <span>Order Summary</span>
-                        <span style="font-size: 0.75rem; color: #60a5fa;" class="mono">CONGOVA-POS</span>
+                        <span style="font-size: 0.75rem; color: #60a5fa;" class="mono">COGNOVA-POS</span>
                     </div>
 
                     <div class="summary-row">

@@ -1,7 +1,7 @@
 FROM php:8.2-apache
 
 # Metadata
-LABEL maintainer="Congova IT"
+LABEL maintainer="Cognova IT"
 LABEL description="Mini Enterprise Inventory & Financial Ledger Engine"
 
 # Set environment variables

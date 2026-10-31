@@ -29,7 +29,7 @@ $summary = $invoiceService->getSalesSummary();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sales Invoices Ledger - Congova IT</title>
+    <title>Sales Invoices Ledger - Cognova IT</title>
     <style>
         :root {
             --bg: #0b1120;

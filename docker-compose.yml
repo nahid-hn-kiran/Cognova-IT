@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: congova_web
+    container_name: cognova_web
     restart: unless-stopped
     ports:
       - "8080:80"
@@ -28,7 +28,7 @@ services:
 
   db:
     image: mysql:8.0
-    container_name: congova_db
+    container_name: cognova_db
     restart: unless-stopped
     command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     environment:

@@ -245,7 +245,7 @@ $csrfToken = csrfToken();
 
 <div class="login-card">
     <div class="card-header">
-        <div class="brand-badge">Congova IT Engine</div>
+        <div class="brand-badge">Cognova IT Engine</div>
         <h1>Enterprise Access Portal</h1>
         <p>Inventory Control & Financial Audit Ledger</p>
     </div>
@@ -276,7 +276,7 @@ $csrfToken = csrfToken();
                     id="email" 
                     name="email" 
                     required 
-                    placeholder="name@congova.local" 
+                    placeholder="name@cognova.local" 
                     value="<?= htmlspecialchars($_POST['email'] ?? '') ?>"
                     autocomplete="username"
                 >
@@ -303,7 +303,7 @@ $csrfToken = csrfToken();
                 <button 
                     type="button" 
                     class="btn-account"
-                    onclick="fillAccount('admin@congova.local', 'Password123!')"
+                    onclick="fillAccount('admin@cognova.local', 'Password123!')"
                 >
                     <span>Admin</span>
                     Executive
@@ -311,7 +311,7 @@ $csrfToken = csrfToken();
                 <button 
                     type="button" 
                     class="btn-account"
-                    onclick="fillAccount('manager@congova.local', 'Password123!')"
+                    onclick="fillAccount('manager@cognova.local', 'Password123!')"
                 >
                     <span>Manager</span>
                     Store / Inventory
@@ -319,7 +319,7 @@ $csrfToken = csrfToken();
                 <button 
                     type="button" 
                     class="btn-account"
-                    onclick="fillAccount('operator@congova.local', 'Password123!')"
+                    onclick="fillAccount('operator@cognova.local', 'Password123!')"
                 >
                     <span>Operator</span>
                     Sales & POS

@@ -68,7 +68,7 @@ $recentInbounds = $inventoryService->getInboundHistory(15);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inbound Stock Orders - Congova IT</title>
+    <title>Inbound Stock Orders - Cognova IT</title>
     <style>
         :root {
             --bg: #0b1120;

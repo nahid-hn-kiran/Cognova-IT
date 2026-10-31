@@ -14,7 +14,7 @@ use Exception;
  */
 class AuthMiddleware
 {
-    private const SESSION_NAME = 'CONGOVA_SESSION';
+    private const SESSION_NAME = 'COGNOVA_SESSION';
     private const SESSION_LIFETIME = 7200; // 2 hours
 
     /**

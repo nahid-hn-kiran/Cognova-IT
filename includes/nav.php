@@ -27,7 +27,7 @@ $currentPath = $_SERVER['SCRIPT_NAME'] ?? '';
         <div class="nav-brand">
             <a href="/index.php" class="brand-link">
                 <span class="brand-icon">&#9638;</span>
-                <span class="brand-title">Congova Ledger</span>
+                <span class="brand-title">Cognova Ledger</span>
             </a>
             <span class="env-badge">Enterprise Engine</span>
         </div>

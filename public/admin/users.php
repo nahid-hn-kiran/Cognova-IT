@@ -341,7 +341,7 @@ $roles = $userService->getRoles();
 
                 <div class="form-group">
                     <label for="userEmail">Work Email Address *</label>
-                    <input type="email" name="email" id="userEmail" class="form-control" required placeholder="rachel@congova.local">
+                    <input type="email" name="email" id="userEmail" class="form-control" required placeholder="rachel@cognova.local">
                 </div>
 
                 <div class="form-group">

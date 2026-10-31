@@ -41,8 +41,8 @@ A high-concurrency, containerized **PHP 8.2 & MySQL 8.0 Enterprise Inventory Man
 
 ### 1. Clone & Enter Project Root
 ```bash
-git clone <repository-url> congova-it
-cd congova-it
+git clone <repository-url> cognova-it
+cd cognova-it
 ```
 
 ### 2. Launch Docker Containers
@@ -77,9 +77,9 @@ The system is pre-seeded with test accounts representing three operational roles
 
 | Role | Email Address | Password | Permissions & Operational Scope |
 | :--- | :--- | :--- | :--- |
-| **Admin** | `admin@congova.local` | `Password123!` | **Full Executive Clearance:** Global audit ledger review, ACID transactional reversals (refunds/voids), staff account provisioning & status toggles, product catalog management, stock inbound receiving, and sales POS checkout. |
-| **Store Manager** | `manager@congova.local` | `Password123!` | **Inventory & Supply Chain:** Product catalog creation and updates, low-stock threshold monitoring, inbound stock purchase order receipts, and invoice history viewing. |
-| **Sales Operator** | `operator@congova.local` | `Password123!` | **Point of Sale & Invoicing:** Customer sales order entry, live cart calculations, atomic checkout execution, receipt printing, and sales register viewing. |
+| **Admin** | `admin@cognova.local` | `Password123!` | **Full Executive Clearance:** Global audit ledger review, ACID transactional reversals (refunds/voids), staff account provisioning & status toggles, product catalog management, stock inbound receiving, and sales POS checkout. |
+| **Store Manager** | `manager@cognova.local` | `Password123!` | **Inventory & Supply Chain:** Product catalog creation and updates, low-stock threshold monitoring, inbound stock purchase order receipts, and invoice history viewing. |
+| **Sales Operator** | `operator@cognova.local` | `Password123!` | **Point of Sale & Invoicing:** Customer sales order entry, live cart calculations, atomic checkout execution, receipt printing, and sales register viewing. |
 
 > **Pro Tip:** The login page includes **Quick-Fill Buttons** for Admin, Manager, and Operator to instantly populate credentials with a single click.
 

@@ -32,9 +32,9 @@ INSERT INTO roles (id, name, slug, description, created_at, updated_at) VALUES
 -- Bcrypt Hash: $2y$10$3D566euhmYAYqBcXVkVar.rgsdNMwFIN.pP3i/XJpuC4Z18C.L2pS
 -- -----------------------------------------------------------------------------
 INSERT INTO users (id, role_id, name, email, password, status, created_at, updated_at) VALUES
-(1, 1, 'System Administrator', 'admin@congova.local', '$2y$10$3D566euhmYAYqBcXVkVar.rgsdNMwFIN.pP3i/XJpuC4Z18C.L2pS', 'active', NOW(), NOW()),
-(2, 2, 'Sarah Manager', 'manager@congova.local', '$2y$10$3D566euhmYAYqBcXVkVar.rgsdNMwFIN.pP3i/XJpuC4Z18C.L2pS', 'active', NOW(), NOW()),
-(3, 3, 'David Operator', 'operator@congova.local', '$2y$10$3D566euhmYAYqBcXVkVar.rgsdNMwFIN.pP3i/XJpuC4Z18C.L2pS', 'active', NOW(), NOW());
+(1, 1, 'System Administrator', 'admin@cognova.local', '$2y$10$3D566euhmYAYqBcXVkVar.rgsdNMwFIN.pP3i/XJpuC4Z18C.L2pS', 'active', NOW(), NOW()),
+(2, 2, 'Sarah Manager', 'manager@cognova.local', '$2y$10$3D566euhmYAYqBcXVkVar.rgsdNMwFIN.pP3i/XJpuC4Z18C.L2pS', 'active', NOW(), NOW()),
+(3, 3, 'David Operator', 'operator@cognova.local', '$2y$10$3D566euhmYAYqBcXVkVar.rgsdNMwFIN.pP3i/XJpuC4Z18C.L2pS', 'active', NOW(), NOW());
 
 -- -----------------------------------------------------------------------------
 -- 3. Seed Sample Products
