@@ -1,13 +1,13 @@
 <?php
 /**
  * Mini Enterprise Inventory & Financial Ledger Engine
- * System Diagnostics & Environment Verification Dashboard
+ * Main Application Dashboard & System Overview
  */
 
 require_once __DIR__ . '/../includes/auth.php';
 
 use App\Config\Database;
-use App\Middleware\AuthMiddleware;
+use App\Services\ProductService;
 
 header('Content-Type: text/html; charset=utf-8');
 
@@ -18,6 +18,8 @@ $dbConnected = false;
 $dbError = null;
 $tableStats = [];
 $sampleProducts = [];
+$lowStockCount = 0;
+$totalInventoryValuation = 0.0;
 
 try {
     $pdo = Database::getConnection();
@@ -30,9 +32,15 @@ try {
         $tableStats[$table] = $stmt->fetch()['total'] ?? 0;
     }
 
+    $productService = new ProductService();
+    $lowStockCount = $productService->getLowStockCount();
+
+    // Inventory Valuation
+    $stmtValuation = $pdo->query("SELECT SUM(stock_quantity * unit_cost) AS total_val FROM products WHERE status = 'active'");
+    $totalInventoryValuation = (float)($stmtValuation->fetch()['total_val'] ?? 0.0);
+
     // Fetch sample products
-    $stmt = $pdo->query("SELECT sku, name, unit_cost, selling_price, stock_quantity, reorder_level, status FROM products ORDER BY id ASC LIMIT 5");
-    $sampleProducts = $stmt->fetchAll();
+    $sampleProducts = $productService->getAll();
 
 } catch (Exception $e) {
     $dbError = $e->getMessage();
@@ -50,10 +58,10 @@ $requiredExtensions = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mini Enterprise Inventory & Ledger - Dashboard</title>
+    <title>Dashboard - Mini Enterprise Inventory & Ledger</title>
     <style>
         :root {
-            --bg: #0f172a;
+            --bg: #0b1120;
             --surface: #1e293b;
             --surface-alt: #334155;
             --text: #f8fafc;
@@ -68,216 +76,210 @@ $requiredExtensions = [
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background: var(--bg);
             color: var(--text);
-            padding: 2rem;
             line-height: 1.5;
+            min-height: 100vh;
         }
-        .container { max-width: 1040px; margin: 0 auto; }
-        .header {
+        .container { max-width: 1200px; margin: 2rem auto; padding: 0 1.5rem; }
+        .hero-banner {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
             margin-bottom: 2rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 1rem;
+            gap: 1.5rem;
         }
-        .header h1 { font-size: 1.75rem; font-weight: 700; color: #fff; margin-bottom: 0.25rem; }
-        .header p { color: var(--text-muted); font-size: 0.95rem; }
-        .user-panel {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 0.75rem 1.25rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        .user-info { font-size: 0.875rem; }
-        .user-name { font-weight: 700; color: #fff; }
-        .user-role { color: var(--primary); font-weight: 600; font-size: 0.8rem; }
+        .hero-title h1 { font-size: 1.85rem; font-weight: 700; color: #fff; margin-bottom: 0.35rem; }
+        .hero-title p { color: var(--text-muted); font-size: 0.95rem; }
         .btn {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
             background: var(--primary);
             color: #fff;
-            padding: 0.5rem 1rem;
+            padding: 0.65rem 1.25rem;
             border-radius: 6px;
             text-decoration: none;
             font-weight: 600;
             font-size: 0.875rem;
             transition: background 0.15s;
+            border: none;
         }
         .btn:hover { background: #2563eb; }
+        .btn-success { background: var(--success); }
+        .btn-success:hover { background: #059669; }
         .btn-outline {
             background: transparent;
             border: 1px solid var(--border);
             color: var(--text);
         }
         .btn-outline:hover { background: var(--surface-alt); }
-        .btn-danger {
-            background: rgba(239, 68, 68, 0.2);
-            border: 1px solid rgba(239, 68, 68, 0.5);
-            color: #fca5a5;
+        
+        /* Stats Ribbon */
+        .stats-ribbon {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2rem;
         }
-        .btn-danger:hover { background: rgba(239, 68, 68, 0.35); }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
-        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; }
-        .card h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; }
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.25rem;
+        }
+        .stat-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; }
+        .card h2 { font-size: 1.15rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; }
         .badge { display: inline-block; padding: 0.25rem 0.6rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
         .badge-success { background: rgba(16, 185, 129, 0.2); color: var(--success); }
         .badge-danger { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
         .badge-info { background: rgba(59, 130, 246, 0.2); color: var(--primary); }
+        .badge-warning { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
         .list-item { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
         .list-item:last-child { border-bottom: none; }
         table { width: 100%; border-collapse: collapse; font-size: 0.875rem; margin-top: 0.5rem; }
-        th, td { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); }
+        th, td { text-align: left; padding: 0.65rem 0.85rem; border-bottom: 1px solid var(--border); }
         th { color: var(--text-muted); font-weight: 600; background: rgba(0,0,0,0.2); }
         .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
         .alert-error { background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger); color: #fca5a5; padding: 1rem; border-radius: 6px; font-size: 0.9rem; margin-top: 1rem; }
-        .role-guard-test {
-            display: flex;
-            gap: 0.75rem;
-            margin-top: 1rem;
-            flex-wrap: wrap;
-        }
     </style>
 </head>
 <body>
+
+<?php include __DIR__ . '/../includes/nav.php'; ?>
+
 <div class="container">
-    <div class="header">
-        <div>
-            <h1>Mini Enterprise Inventory & Financial Ledger</h1>
-            <p>Module 2: Core Backend Foundation & Role-Based Security</p>
+    <div class="hero-banner">
+        <div class="hero-title">
+            <h1>Mini Enterprise Inventory & Ledger Engine</h1>
+            <p>Unified Real-Time Inventory Control, Inbound Orders & Immutable Financial Ledgers</p>
         </div>
-        <div class="user-panel">
-            <?php if ($isLoggedIn): ?>
-                <div class="user-info">
-                    <div class="user-name"><?= htmlspecialchars($currentUser['name']) ?></div>
-                    <div class="user-role"><?= htmlspecialchars($currentUser['role']) ?> (<?= htmlspecialchars($currentUser['email']) ?>)</div>
-                </div>
-                <a href="/logout.php" class="btn btn-danger">Sign Out</a>
+        <div style="display: flex; gap: 0.75rem;">
+            <?php if (hasRole(['Admin', 'Store Manager'])): ?>
+                <a href="/inventory/index.php" class="btn">
+                    <span>&#9638;</span> Product Catalog
+                </a>
+                <a href="/inventory/stock-in.php" class="btn btn-success">
+                    <span>&#10515;</span> Stock Inbound
+                </a>
             <?php else: ?>
-                <div class="user-info">
-                    <div class="user-name">Guest Mode</div>
-                    <div style="color: var(--text-muted); font-size: 0.8rem;">Unauthenticated</div>
-                </div>
-                <a href="/login.php" class="btn">Sign In</a>
+                <a href="/login.php" class="btn">Sign In to Manage Inventory</a>
             <?php endif; ?>
         </div>
     </div>
 
-    <!-- Role Guards Interactive Testing -->
-    <div class="card" style="margin-bottom: 1.5rem; border-color: rgba(99, 102, 241, 0.4);">
-        <h2>
-            Role-Based Authorization Guards (Module 2)
-            <span class="badge badge-info">RBAC Security</span>
-        </h2>
-        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
-            Test route guards enforced by <span class="mono">requireRole(...)</span> in action:
-        </p>
-        <div class="role-guard-test">
-            <a href="/protected.php?role=Admin" class="btn btn-outline">
-                Guard: Admin Only
-            </a>
-            <a href="/protected.php?role=Store Manager" class="btn btn-outline">
-                Guard: Store Manager Only
-            </a>
-            <a href="/protected.php?role=Sales Operator" class="btn btn-outline">
-                Guard: Sales Operator Only
-            </a>
-            <a href="/protected.php?role=Staff" class="btn btn-outline">
-                Guard: Any Staff
-            </a>
+    <!-- Quick Stats Ribbon -->
+    <div class="stats-ribbon">
+        <div class="stat-card">
+            <div class="stat-label">Total SKUs in Catalog</div>
+            <div class="stat-value"><?= (int)($tableStats['products'] ?? 0) ?></div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">Inventory Valuation</div>
+            <div class="stat-value" style="color: #34d399;">$<?= number_format($totalInventoryValuation, 2) ?></div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">Low Stock Alerts</div>
+            <div class="stat-value" style="color: <?= $lowStockCount > 0 ? '#f87171' : '#34d399' ?>;">
+                <?= $lowStockCount ?>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">Audit Ledger Events</div>
+            <div class="stat-value"><?= (int)($tableStats['audit_ledger'] ?? 0) ?></div>
         </div>
     </div>
 
+    <!-- Navigation & Quick Access Modules -->
     <div class="grid">
-        <!-- Database Connectivity via Database.php -->
+        <!-- Module 3: Inventory Management Card -->
+        <div class="card" style="border-color: rgba(59, 130, 246, 0.4);">
+            <h2>
+                Inventory & Stock In (Module 3)
+                <span class="badge badge-info">Active</span>
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem;">
+                Store Manager portal for managing products, tracking low-stock thresholds, and recording inbound supplier shipments.
+            </p>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <a href="/inventory/index.php" class="btn btn-outline" style="font-size: 0.825rem;">
+                    Browse Catalog
+                </a>
+                <a href="/inventory/index.php?low_stock=1" class="btn btn-outline" style="font-size: 0.825rem; border-color: rgba(239,68,68,0.5); color: #f87171;">
+                    Low Stock Filter (<?= $lowStockCount ?>)
+                </a>
+                <a href="/inventory/stock-in.php" class="btn btn-success" style="font-size: 0.825rem;">
+                    Record Stock In
+                </a>
+            </div>
+        </div>
+
+        <!-- Role Guard Security Card -->
+        <div class="card" style="border-color: rgba(99, 102, 241, 0.4);">
+            <h2>
+                Role Guard RBAC (Module 2)
+                <span class="badge badge-info">Security</span>
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+                Current clearance: <strong style="color: #60a5fa;"><?= htmlspecialchars($currentUser['role'] ?? 'Guest (Unauthenticated)') ?></strong>
+            </p>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <a href="/protected.php?role=Admin" class="btn btn-outline" style="font-size: 0.8rem;">Guard: Admin</a>
+                <a href="/protected.php?role=Store Manager" class="btn btn-outline" style="font-size: 0.8rem;">Guard: Manager</a>
+                <a href="/protected.php?role=Sales Operator" class="btn btn-outline" style="font-size: 0.8rem;">Guard: Operator</a>
+            </div>
+        </div>
+
+        <!-- Database & Engine Health -->
         <div class="card">
             <h2>
-                Database (App\Config\Database)
+                Engine Diagnostics
                 <span class="badge <?= $dbConnected ? 'badge-success' : 'badge-danger' ?>">
                     <?= $dbConnected ? 'PDO Connected' : 'Unavailable' ?>
                 </span>
             </h2>
             <div class="list-item">
-                <span class="text-muted">Host & Port</span>
-                <span class="mono"><?= htmlspecialchars((getenv('DB_HOST') ?: 'db') . ':' . (getenv('DB_PORT') ?: '3306')) ?></span>
+                <span class="text-muted">Storage Engine</span>
+                <span class="mono">MySQL 8.0 (InnoDB)</span>
             </div>
             <div class="list-item">
-                <span class="text-muted">Database Name</span>
-                <span class="mono"><?= htmlspecialchars(getenv('DB_NAME') ?: (getenv('DB_DATABASE') ?: 'inventory_ledger')) ?></span>
+                <span class="text-muted">PHP Runtime</span>
+                <span class="mono"><?= PHP_VERSION ?></span>
             </div>
             <div class="list-item">
-                <span class="text-muted">Emulated Prepares</span>
-                <span class="mono" style="color: var(--success);">Disabled (Secure)</span>
+                <span class="text-muted">Inbound Orders</span>
+                <span class="mono"><?= (int)($tableStats['stock_inbound'] ?? 0) ?></span>
             </div>
-            <div class="list-item">
-                <span class="text-muted">Error Mode</span>
-                <span class="mono" style="color: var(--success);">ERRMODE_EXCEPTION</span>
-            </div>
-            <?php if ($dbError): ?>
-                <div class="alert-error">
-                    <strong>Error:</strong> <?= htmlspecialchars($dbError) ?>
-                </div>
-            <?php endif; ?>
-        </div>
-
-        <!-- Session & Auth State -->
-        <div class="card">
-            <h2>
-                Session & Auth State
-                <span class="badge <?= $isLoggedIn ? 'badge-success' : 'badge-info' ?>">
-                    <?= $isLoggedIn ? 'Active Session' : 'Guest' ?>
-                </span>
-            </h2>
-            <div class="list-item">
-                <span class="text-muted">Session Status</span>
-                <span class="mono"><?= session_status() === PHP_SESSION_ACTIVE ? 'PHP_SESSION_ACTIVE' : 'INACTIVE' ?></span>
-            </div>
-            <div class="list-item">
-                <span class="text-muted">HttpOnly Cookies</span>
-                <span class="mono" style="color: var(--success);">Enabled</span>
-            </div>
-            <div class="list-item">
-                <span class="text-muted">SameSite Policy</span>
-                <span class="mono">Lax</span>
-            </div>
-            <div class="list-item">
-                <span class="text-muted">Active Role</span>
-                <span class="mono" style="color: var(--primary); font-weight: bold;"><?= htmlspecialchars($currentUser['role'] ?? 'None') ?></span>
-            </div>
-        </div>
-
-        <!-- PHP Extensions -->
-        <div class="card">
-            <h2>PHP Extensions</h2>
-            <?php foreach ($requiredExtensions as $ext => $loaded): ?>
-                <div class="list-item">
-                    <span class="mono"><?= $ext ?></span>
-                    <span class="badge <?= $loaded ? 'badge-success' : 'badge-danger' ?>">
-                        <?= $loaded ? 'Enabled' : 'Missing' ?>
-                    </span>
-                </div>
-            <?php endforeach; ?>
         </div>
     </div>
 
-    <?php if ($dbConnected): ?>
-    <div class="card" style="margin-bottom: 2rem;">
-        <h2>Database Tables & Record Counts</h2>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin-top: 0.5rem;">
-            <?php foreach ($tableStats as $tableName => $count): ?>
-                <div style="background: var(--surface-alt); padding: 0.75rem 1rem; border-radius: 6px; text-align: center;">
-                    <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;" class="mono"><?= htmlspecialchars($tableName) ?></div>
-                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);"><?= $count ?></div>
-                </div>
-            <?php endforeach; ?>
-        </div>
-    </div>
-
+    <?php if ($dbConnected && !empty($sampleProducts)): ?>
     <div class="card">
-        <h2>Seeded Inventory Catalog (Sample)</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2>Live Inventory Catalog Preview</h2>
+            <a href="/inventory/index.php" style="color: var(--primary); text-decoration: none; font-size: 0.85rem; font-weight: 600;">View Full Catalog &rarr;</a>
+        </div>
         <table>
             <thead>
                 <tr>
@@ -285,19 +287,29 @@ $requiredExtensions = [
                     <th>Product Name</th>
                     <th>Unit Cost</th>
                     <th>Selling Price</th>
-                    <th>Stock</th>
+                    <th>In Stock</th>
                     <th>Reorder Lvl</th>
                     <th>Status</th>
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($sampleProducts as $p): ?>
+                <?php foreach (array_slice($sampleProducts, 0, 6) as $p): ?>
                 <tr>
-                    <td class="mono"><?= htmlspecialchars($p['sku']) ?></td>
+                    <td class="mono" style="color: #60a5fa; font-weight: 600;"><?= htmlspecialchars($p['sku']) ?></td>
                     <td><?= htmlspecialchars($p['name']) ?></td>
                     <td>$<?= number_format((float)$p['unit_cost'], 2) ?></td>
                     <td>$<?= number_format((float)$p['selling_price'], 2) ?></td>
-                    <td><strong><?= (int)$p['stock_quantity'] ?></strong></td>
+                    <td>
+                        <?php if ($p['is_low_stock']): ?>
+                            <span style="color: #f87171; font-weight: 700; background: rgba(239,68,68,0.15); padding: 0.15rem 0.5rem; border-radius: 9999px;">
+                                &#9888; <?= (int)$p['stock_quantity'] ?> units
+                            </span>
+                        <?php else: ?>
+                            <span style="color: #34d399; font-weight: 600;">
+                                <?= (int)$p['stock_quantity'] ?> units
+                            </span>
+                        <?php endif; ?>
+                    </td>
                     <td><?= (int)$p['reorder_level'] ?></td>
                     <td><span class="badge badge-success"><?= htmlspecialchars($p['status']) ?></span></td>
                 </tr>
@@ -307,5 +319,6 @@ $requiredExtensions = [
     </div>
     <?php endif; ?>
 </div>
+
 </body>
 </html>
