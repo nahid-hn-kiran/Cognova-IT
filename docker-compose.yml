@@ -12,8 +12,11 @@ services:
     environment:
       DB_HOST: db
       DB_PORT: 3306
+      DB_NAME: inventory_ledger
       DB_DATABASE: inventory_ledger
+      DB_USER: app_user
       DB_USERNAME: app_user
+      DB_PASS: app_secret_password
       DB_PASSWORD: app_secret_password
       APP_ENV: development
       APP_DEBUG: "true"
